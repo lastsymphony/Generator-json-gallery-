@@ -2,14 +2,25 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>JSON Generator - Dark Mode</title>
+  <title>JSON Generator + File Upload</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 min-h-screen flex items-center justify-center text-white">
 
   <div class="max-w-md w-full bg-gray-800 rounded-2xl shadow-lg p-6 space-y-5">
-    <h2 class="text-2xl font-bold text-center text-white">📦 JSON Data Generator</h2>
+    <h2 class="text-2xl font-bold text-center">📦 JSON Generator + Uploader</h2>
 
+    <!-- Upload File -->
+    <div>
+      <label class="block font-medium mb-1">Upload File MAX 100 Mb:</label>
+      <input type="file" id="fileInput" class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4
+        file:rounded-full file:border-0 file:text-sm file:font-semibold
+        file:bg-green-600 file:text-white hover:file:bg-green-700" />
+      <progress id="progressBar" value="0" max="100" class="w-full mt-2 hidden"></progress>
+      <div id="uploadStatus" class="text-sm text-gray-300 mt-1"></div>
+    </div>
+
+    <!-- Input Fields -->
     <div>
       <label class="block font-medium mb-1">Title:</label>
       <input type="text" id="title" placeholder="contoh: guaxichan"
@@ -17,8 +28,8 @@
     </div>
 
     <div>
-      <label class="block font-medium mb-1">URL:</label>
-      <input type="text" id="url" placeholder="contoh: https://files.catbox.moe/85ksrh.jpg"
+      <label class="block font-medium mb-1">URL (otomatis setelah upload):</label>
+      <input type="text" id="url" placeholder="https://..."
         class="w-full border border-gray-600 bg-gray-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
     </div>
 
@@ -34,49 +45,129 @@
     </div>
 
     <div>
-      <label class="block font-medium mb-1">Upload Date (ISO Format):</label>
+      <label class="block font-medium mb-1">Upload Date (ISO):</label>
       <input type="datetime-local" id="upload"
         class="w-full border border-gray-600 bg-gray-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
     </div>
 
+    <!-- Generate + Copy + Reset -->
     <button onclick="generateJSON()"
       class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition">Generate</button>
 
-    <textarea id="result" readonly placeholder="Hasil JSON muncul di sini..."
+    <textarea id="result" readonly placeholder="Hasil JSON..."
       class="w-full border border-gray-600 bg-gray-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none h-36"></textarea>
 
-    <button onclick="copyResult()"
-      class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition">📋 Copy</button>
+    <div class="flex gap-2">
+      <button onclick="copyResult()"
+        class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition">📋 Copy</button>
+      <button onclick="resetForm()"
+        class="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition">🔄 Reset</button>
+    </div>
   </div>
 
-  <script>
-    function generateJSON() {
-  const title = document.getElementById("title").value;
-  const url = document.getElementById("url").value.trim();
-  const category = document.getElementById("category").value;
-  const uploadRaw = document.getElementById("upload").value;
+<script>
+  let uploadedFileName = "";
 
-  const upload = uploadRaw ? new Date(uploadRaw).toISOString() : new Date().toISOString();
+  function detectCategoryByExtension(fileName) {
+    const ext = fileName.split('.').pop().toLowerCase();
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+    const videoExts = ['mp4', 'mov', 'webm', 'avi', 'mkv'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'flac', 'm4a'];
+    const documentExts = ['pdf', 'docx', 'txt', 'pptx', 'xls', 'xlsx', 'json'];
 
-  const jsonData = {
-    title: title,
-    url: url,
-    category: category,
-    type: category, // otomatis ikut category
-    upload: upload
-  };
+    if (imageExts.includes(ext)) return 'image';
+    if (videoExts.includes(ext)) return 'video';
+    if (audioExts.includes(ext)) return 'audio';
+    if (documentExts.includes(ext)) return 'document';
+    return 'document';
+  }
 
-  // tambahkan koma di belakang hasil JSON
-  document.getElementById("result").value = JSON.stringify(jsonData, null, 2) + ",";
-}
+  document.getElementById('fileInput').addEventListener('change', async function () {
+    const file = this.files[0];
+    uploadedFileName = file.name;
+    const progress = document.getElementById('progressBar');
+    const status = document.getElementById('uploadStatus');
+    const urlInput = document.getElementById('url');
+    const categorySelect = document.getElementById('category');
 
-    function copyResult() {
-      const resultArea = document.getElementById("result");
-      resultArea.select();
-      resultArea.setSelectionRange(0, 99999); // for mobile
-      document.execCommand("copy");
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const detectedType = detectCategoryByExtension(file.name);
+    categorySelect.value = detectedType;
+
+    progress.classList.remove("hidden");
+    status.innerText = "Mengunggah...";
+
+    try {
+      const res = await fetch('https://api.ryzumi.vip/api/uploader/ryzencdn', {
+        method: 'POST',
+        body: formData
+      });
+
+      const text = await res.text();
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        status.innerText = "Gagal parsing response.";
+        return;
+      }
+
+      progress.classList.add("hidden");
+
+      if (res.ok && json.url) {
+        status.innerText = "Upload sukses ✅";
+        urlInput.value = json.url;
+      } else {
+        status.innerText = "Gagal upload: " + (json.message || "unknown error");
+      }
+    } catch (err) {
+      progress.classList.add("hidden");
+      status.innerText = "Terjadi error: " + err.message;
     }
-  </script>
+  });
+
+  function generateJSON() {
+    const title = document.getElementById("title").value;
+    const url = document.getElementById("url").value.trim();
+    const category = document.getElementById("category").value;
+    const uploadRaw = document.getElementById("upload").value;
+    const upload = uploadRaw ? new Date(uploadRaw).toISOString() : new Date().toISOString();
+
+    const jsonData = {
+      title: title,
+      url: url,
+      category: category,
+      type: category,
+      upload: upload
+    };
+
+    document.getElementById("result").value = JSON.stringify(jsonData, null, 2) + ",";
+  }
+
+  function copyResult() {
+    const resultArea = document.getElementById("result");
+    resultArea.select();
+    resultArea.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+  }
+
+  function resetForm() {
+    document.getElementById("fileInput").value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("url").value = "";
+    document.getElementById("category").value = "image";
+    document.getElementById("upload").value = "";
+    document.getElementById("result").value = "";
+    document.getElementById("uploadStatus").innerText = "";
+    document.getElementById("progressBar").classList.add("hidden");
+    document.getElementById("progressBar").value = 0;
+    uploadedFileName = "";
+  }
+</script>
 
 </body>
 </html>
