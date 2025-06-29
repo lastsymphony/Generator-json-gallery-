@@ -51,23 +51,24 @@
 
   <script>
     function generateJSON() {
-      const title = document.getElementById("title").value;
-      const url = document.getElementById("url").value.trim();
-      const category = document.getElementById("category").value;
-      const uploadRaw = document.getElementById("upload").value;
+  const title = document.getElementById("title").value;
+  const url = document.getElementById("url").value.trim();
+  const category = document.getElementById("category").value;
+  const uploadRaw = document.getElementById("upload").value;
 
-      const upload = uploadRaw ? new Date(uploadRaw).toISOString() : new Date().toISOString();
+  const upload = uploadRaw ? new Date(uploadRaw).toISOString() : new Date().toISOString();
 
-      const jsonData = {
-        title: title,
-        url: url,
-        category: category,
-        type: category, // otomatis ikut category
-        upload: upload
-      };
+  const jsonData = {
+    title: title,
+    url: url,
+    category: category,
+    type: category, // otomatis ikut category
+    upload: upload
+  };
 
-      document.getElementById("result").value = JSON.stringify(jsonData, null, 2);
-    }
+  // tambahkan koma di belakang hasil JSON
+  document.getElementById("result").value = JSON.stringify(jsonData, null, 2) + ",";
+}
 
     function copyResult() {
       const resultArea = document.getElementById("result");
