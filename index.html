@@ -177,8 +177,13 @@
       });
       
       const fileDiv = document.createElement('div');
-      fileDiv.className = 'bg-gray-700/50 rounded-lg p-3';
+      fileDiv.className = 'bg-gray-700/50 rounded-lg p-3 relative';
       fileDiv.innerHTML = `
+        <button onclick="removeFile('${fileId}')" class="absolute top-2 right-2 p-1 rounded-full bg-gray-600 hover:bg-gray-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-300" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
         <div class="flex justify-between items-start">
           <div class="flex-1 min-w-0">
             <div class="text-xs sm:text-sm text-gray-300 truncate">${file.name}</div>
@@ -186,6 +191,11 @@
           </div>
           <span class="text-xs px-2 py-1 rounded bg-gray-600 text-gray-200 ml-2">${detectedCategory}</span>
         </div>
+        ${detectedCategory === 'image' ? `
+          <div class="mt-2">
+            <img id="${fileId}-preview" class="max-h-20 rounded border border-gray-600 mx-auto" />
+          </div>
+        ` : ''}
         <div class="mt-2">
           <label class="block text-xs text-gray-400 mb-1">Custom Title</label>
           <input type="text" id="${fileId}-title" value="${defaultTitle}" 
@@ -194,9 +204,38 @@
         </div>
       `;
       filesPreviewList.appendChild(fileDiv);
+      
+      // Generate preview for images
+      if (detectedCategory === 'image') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById(`${fileId}-preview`).src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
     }
     
     filesPreview.classList.remove('hidden');
+    updateFileNameDisplay();
+  }
+
+  function removeFile(fileId) {
+    filesToUpload = filesToUpload.filter(f => f.id !== fileId);
+    document.getElementById('filesPreviewList').querySelector(`[id^="${fileId}"]`).parentElement.remove();
+    
+    if (filesToUpload.length === 0) {
+      document.getElementById('filesPreview').classList.add('hidden');
+      document.getElementById('fileName').textContent = 'Klik untuk memilih file (bisa multiple)';
+      document.getElementById('fileName').className = (window.innerWidth < 640 ? 'text-xs' : 'text-sm') + ' text-gray-400';
+    } else {
+      updateFileNameDisplay();
+    }
+  }
+
+  function updateFileNameDisplay() {
+    const fileNameDisplay = document.getElementById('fileName');
+    fileNameDisplay.textContent = `${filesToUpload.length} file(s) selected`;
+    fileNameDisplay.className = (window.innerWidth < 640 ? 'text-xs' : 'text-sm') + ' text-gray-300 truncate';
   }
 
   function formatFileSize(bytes) {
@@ -216,13 +255,7 @@
 
   document.getElementById('fileInput').addEventListener('change', function() {
     const files = this.files;
-    const fileNameDisplay = document.getElementById('fileName');
-    
     if (!files || files.length === 0) return;
-
-    fileNameDisplay.textContent = `${files.length} file(s) selected`;
-    fileNameDisplay.className = (window.innerWidth < 640 ? 'text-xs' : 'text-sm') + ' text-gray-300 truncate';
-    
     showFilesPreview(files);
     updateStatus(`Siap untuk mengupload ${files.length} file`);
   });
@@ -310,7 +343,7 @@
     }
 
     // Format as individual JSON objects separated by commas
-    const jsonString = jsonArray.map(obj => JSON.stringify(obj, null, 2)).join(',\n\n');
+    const jsonString = jsonArray.map(obj => JSON.stringify(obj, null, 2) + ',').join('\n\n');
     document.getElementById("result").value = jsonString;
     updateStatus(`JSON berhasil digenerate untuk ${jsonArray.length} file!`, true);
   }
