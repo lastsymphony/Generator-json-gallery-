@@ -33,17 +33,17 @@
   <div class="max-w-md w-full mx-auto bg-dark-800 rounded-xl shadow-xl p-4 sm:p-6 space-y-6 border border-gray-700">
     <div class="text-center">
       <h2 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">JSON Generator + Uploader</h2>
-      <p class="text-xs sm:text-sm text-gray-400 mt-1">Upload file dan generate metadata JSON</p>
+      <p class="text-xs sm:text-sm text-gray-400 mt-1">Upload multiple files and generate metadata JSON</p>
     </div>
 
     <!-- Upload File -->
     <div class="space-y-2">
-      <label class="block font-medium text-gray-300 text-sm sm:text-base">Upload File <span class="text-gray-500">(MAX 100 MB)</span></label>
+      <label class="block font-medium text-gray-300 text-sm sm:text-base">Upload Files <span class="text-gray-500">(MAX 100 MB each)</span></label>
       <div class="flex items-center gap-2">
-        <input type="file" id="fileInput" class="hidden" />
+        <input type="file" id="fileInput" class="hidden" multiple />
         <label for="fileInput" class="flex-1 cursor-pointer">
           <div class="border-2 border-dashed border-gray-600 rounded-lg p-3 sm:p-4 text-center hover:border-gray-500 transition">
-            <div id="fileName" class="text-xs sm:text-sm text-gray-400 truncate">Klik untuk memilih file</div>
+            <div id="fileName" class="text-xs sm:text-sm text-gray-400 truncate">Klik untuk memilih file (bisa multiple)</div>
             <div class="text-xs text-gray-500 mt-1">Format: image, video, audio, document</div>
           </div>
         </label>
@@ -53,25 +53,19 @@
         <span id="statusIcon"></span>
         <span id="statusText" class="text-gray-400">Siap untuk upload</span>
       </div>
+      
+      <!-- Files Preview with Custom Titles -->
+      <div id="filesPreview" class="space-y-3 mt-3 hidden">
+        <div class="text-xs sm:text-sm font-medium text-gray-300">File Preview:</div>
+        <div id="filesPreviewList" class="space-y-3"></div>
+      </div>
     </div>
 
-    <!-- Input Fields -->
+    <!-- Common Fields -->
     <div class="space-y-4">
-      <div>
-        <label class="block font-medium text-gray-300 mb-1.5 text-sm sm:text-base">Title</label>
-        <input type="text" id="title" placeholder="contoh: guaxichan"
-          class="w-full border border-gray-700 bg-gray-800/50 text-white rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base focus:ring-2 focus:ring-primary-600/50 focus:border-primary-600 outline-none transition placeholder:text-gray-500" />
-      </div>
-
-      <div>
-        <label class="block font-medium text-gray-300 mb-1.5 text-sm sm:text-base">URL</label>
-        <input type="text" id="url" placeholder="https://..."
-          class="w-full border border-gray-700 bg-gray-800/50 text-white rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base focus:ring-2 focus:ring-primary-600/50 focus:border-primary-600 outline-none transition placeholder:text-gray-500" readonly />
-      </div>
-
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block font-medium text-gray-300 mb-1.5 text-sm sm:text-base">Category</label>
+          <label class="block font-medium text-gray-300 mb-1.5 text-sm sm:text-base">Default Category</label>
           <select id="category"
             class="w-full border border-gray-700 bg-gray-800/50 text-white rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base focus:ring-2 focus:ring-primary-600/50 focus:border-primary-600 outline-none transition appearance-none">
             <option value="image">Image</option>
@@ -90,12 +84,12 @@
     </div>
 
     <!-- Action Buttons -->
-    <button onclick="generateJSON()"
+    <button onclick="uploadFiles()"
       class="w-full bg-primary-600 text-white py-2 sm:py-3 rounded-lg font-semibold hover:bg-primary-700 transition active:scale-[0.98] flex items-center justify-center gap-2 text-sm sm:text-base">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
       </svg>
-      Generate JSON
+      Upload Files
     </button>
 
     <div class="relative">
@@ -111,6 +105,13 @@
     </div>
 
     <div class="flex gap-3">
+      <button onclick="generateJSON()"
+        class="flex-1 bg-secondary-600 text-white py-2 sm:py-2.5 rounded-lg font-medium hover:bg-secondary-700 transition active:scale-[0.98] flex items-center justify-center gap-2 text-sm sm:text-base">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+        </svg>
+        Generate JSON
+      </button>
       <button onclick="resetForm()"
         class="flex-1 bg-gray-700 text-white py-2 sm:py-2.5 rounded-lg font-medium hover:bg-gray-600 transition active:scale-[0.98] flex items-center justify-center gap-2 text-sm sm:text-base">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -122,7 +123,8 @@
   </div>
 
 <script>
-  let uploadedFileName = "";
+  let filesToUpload = [];
+  let uploadedFiles = [];
 
   function updateStatus(text, isSuccess = false, isError = false) {
     const icon = document.getElementById('statusIcon');
@@ -154,79 +156,163 @@
     return 'document';
   }
 
-  document.getElementById('fileInput').addEventListener('change', async function () {
-    const file = this.files[0];
+  function showFilesPreview(files) {
+    const filesPreview = document.getElementById('filesPreview');
+    const filesPreviewList = document.getElementById('filesPreviewList');
+    
+    filesPreviewList.innerHTML = '';
+    filesToUpload = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileId = 'file-' + i;
+      const defaultTitle = file.name.split('.').slice(0, -1).join('.');
+      const detectedCategory = detectCategoryByExtension(file.name);
+      
+      filesToUpload.push({
+        id: fileId,
+        file: file,
+        title: defaultTitle,
+        category: detectedCategory
+      });
+      
+      const fileDiv = document.createElement('div');
+      fileDiv.className = 'bg-gray-700/50 rounded-lg p-3';
+      fileDiv.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div class="flex-1 min-w-0">
+            <div class="text-xs sm:text-sm text-gray-300 truncate">${file.name}</div>
+            <div class="text-xs text-gray-400 mt-1">Size: ${formatFileSize(file.size)}</div>
+          </div>
+          <span class="text-xs px-2 py-1 rounded bg-gray-600 text-gray-200 ml-2">${detectedCategory}</span>
+        </div>
+        <div class="mt-2">
+          <label class="block text-xs text-gray-400 mb-1">Custom Title</label>
+          <input type="text" id="${fileId}-title" value="${defaultTitle}" 
+            class="w-full border border-gray-600 bg-gray-800 text-white rounded px-2 py-1 text-xs focus:ring-1 focus:ring-primary-600 focus:border-primary-600 outline-none transition"
+            onchange="updateFileTitle('${fileId}', this.value)">
+        </div>
+      `;
+      filesPreviewList.appendChild(fileDiv);
+    }
+    
+    filesPreview.classList.remove('hidden');
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  function updateFileTitle(fileId, title) {
+    const fileIndex = filesToUpload.findIndex(f => f.id === fileId);
+    if (fileIndex !== -1) {
+      filesToUpload[fileIndex].title = title;
+    }
+  }
+
+  document.getElementById('fileInput').addEventListener('change', function() {
+    const files = this.files;
     const fileNameDisplay = document.getElementById('fileName');
-    const progress = document.getElementById('progressBar');
-    const urlInput = document.getElementById('url');
-    const categorySelect = document.getElementById('category');
+    
+    if (!files || files.length === 0) return;
 
-    if (!file) return;
-
-    uploadedFileName = file.name;
-    fileNameDisplay.textContent = file.name;
+    fileNameDisplay.textContent = `${files.length} file(s) selected`;
     fileNameDisplay.className = (window.innerWidth < 640 ? 'text-xs' : 'text-sm') + ' text-gray-300 truncate';
+    
+    showFilesPreview(files);
+    updateStatus(`Siap untuk mengupload ${files.length} file`);
+  });
 
-    const formData = new FormData();
-    formData.append('file', file);
+  async function uploadFiles() {
+    if (filesToUpload.length === 0) {
+      updateStatus("Tidak ada file untuk diupload", false, true);
+      return;
+    }
 
-    const detectedType = detectCategoryByExtension(file.name);
-    categorySelect.value = detectedType;
-
+    const progress = document.getElementById('progressBar');
     progress.classList.remove("hidden");
-    updateStatus("Mengunggah file...");
+    updateStatus(`Mengunggah ${filesToUpload.length} file...`);
+
+    // Clear previous uploads
+    uploadedFiles = [];
 
     try {
-      const res = await fetch('https://api.ryzumi.vip/api/uploader/ryzencdn', {
-        method: 'POST',
-        body: formData
-      });
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const fileData = filesToUpload[i];
+        const formData = new FormData();
+        formData.append('file', fileData.file);
 
-      const text = await res.text();
-      let json;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        updateStatus("Gagal parsing response", false, true);
-        return;
+        progress.value = (i / filesToUpload.length) * 100;
+        updateStatus(`Mengunggah file ${i+1}/${filesToUpload.length}...`);
+
+        const res = await fetch('https://api.ryzumi.vip/api/uploader/ryzencdn', {
+          method: 'POST',
+          body: formData
+        });
+
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          updateStatus(`Gagal parsing response untuk file ${i+1}`, false, true);
+          continue;
+        }
+
+        if (res.ok && json.url) {
+          uploadedFiles.push({
+            name: fileData.file.name,
+            title: fileData.title,
+            url: json.url,
+            category: fileData.category
+          });
+        } else {
+          updateStatus(`Gagal upload file ${i+1}: ${json.message || "unknown error"}`, false, true);
+        }
       }
 
       progress.classList.add("hidden");
-
-      if (res.ok && json.url) {
-        updateStatus("Upload berhasil!", true);
-        urlInput.value = json.url;
-      } else {
-        updateStatus("Gagal upload: " + (json.message || "unknown error"), false, true);
-      }
+      updateStatus(`Upload selesai! ${uploadedFiles.length}/${filesToUpload.length} file berhasil`, true);
+      
+      // Auto-generate JSON after upload
+      generateJSON();
     } catch (err) {
       progress.classList.add("hidden");
       updateStatus("Error: " + err.message, false, true);
     }
-  });
+  }
 
   function generateJSON() {
-    const title = document.getElementById("title").value;
-    const url = document.getElementById("url").value.trim();
-    const category = document.getElementById("category").value;
     const uploadRaw = document.getElementById("upload").value;
     const upload = uploadRaw ? new Date(uploadRaw).toISOString() : new Date().toISOString();
 
-    if (!url) {
-      updateStatus("URL kosong, silakan upload file terlebih dahulu", false, true);
+    if (uploadedFiles.length === 0) {
+      updateStatus("Tidak ada file yang diupload", false, true);
       return;
     }
 
-    const jsonData = {
-      title: title || uploadedFileName.split('.')[0],
-      url: url,
-      category: category,
-      type: category,
-      upload: upload
-    };
+    let jsonArray = [];
+    
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const file = uploadedFiles[i];
+      
+      jsonArray.push({
+        title: file.title,
+        url: file.url,
+        category: file.category,
+        type: file.category,
+        upload: upload
+      });
+    }
 
-    document.getElementById("result").value = JSON.stringify(jsonData, null, 2) + ",";
-    updateStatus("JSON berhasil digenerate!", true);
+    // Format as individual JSON objects separated by commas
+    const jsonString = jsonArray.map(obj => JSON.stringify(obj, null, 2)).join(',\n\n');
+    document.getElementById("result").value = jsonString;
+    updateStatus(`JSON berhasil digenerate untuk ${jsonArray.length} file!`, true);
   }
 
   function copyResult() {
@@ -253,16 +339,17 @@
 
   function resetForm() {
     document.getElementById("fileInput").value = "";
-    document.getElementById("title").value = "";
-    document.getElementById("url").value = "";
     document.getElementById("category").value = "image";
     document.getElementById("upload").value = "";
     document.getElementById("result").value = "";
     document.getElementById("progressBar").classList.add("hidden");
     document.getElementById("progressBar").value = 0;
-    document.getElementById("fileName").textContent = "Klik untuk memilih file";
+    document.getElementById("fileName").textContent = "Klik untuk memilih file (bisa multiple)";
     document.getElementById("fileName").className = (window.innerWidth < 640 ? 'text-xs' : 'text-sm') + ' text-gray-400';
-    uploadedFileName = "";
+    document.getElementById("filesPreviewList").innerHTML = '';
+    document.getElementById("filesPreview").classList.add("hidden");
+    filesToUpload = [];
+    uploadedFiles = [];
     updateStatus("Siap untuk upload");
   }
 
@@ -279,7 +366,7 @@
     const fileNameDisplay = document.getElementById('fileName');
     if (fileNameDisplay) {
       fileNameDisplay.className = (window.innerWidth < 640 ? 'text-xs' : 'text-sm') + 
-        (uploadedFileName ? ' text-gray-300 truncate' : ' text-gray-400');
+        (document.getElementById('fileInput').files.length > 0 ? ' text-gray-300 truncate' : ' text-gray-400');
     }
   });
 </script>
